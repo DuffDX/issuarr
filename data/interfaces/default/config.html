@@ -449,8 +449,10 @@
                     %endfor
                 </div>
             </div>
+            ${field('blocklist_minutes', 'Pause a provider that is down for', config['blocklist_minutes'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">minutes</span>',
+                    help='When a provider can\'t be reached or answers with a server error. 0 never pauses it. A rejected API key never pauses it, and a provider that says you hit its limit is always paused.')}
             <div class="set-row">
-                <div class="set-label"><b>Blocked providers</b><span>A provider that keeps failing is paused for a while. You can unblock it early.</span></div>
+                <div class="set-label"><b>Blocked providers</b><span>Providers paused right now. A successful Test unpauses one, or unblock it here.</span></div>
                 <div class="set-ctl"><button type="button" class="btn" onclick="manageBlockedProviders()">Show blocked</button></div>
             </div>
             <div id="manage_blocked_providers_dialog" title="Blocked providers" style="display:none">

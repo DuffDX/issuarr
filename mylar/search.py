@@ -1186,44 +1186,12 @@ def NZB_SEARCH(
                         )
                         is_info['foundc']['status'] = False
                         break
-                    except requests.exceptions.ConnectionError as e:
-                        logger.warn(
-                            'Connection error trying to retrieve data from %s: %s'
-                            % (nzbprov, e)
-                        )
-                        logger.warn(
-                            '[%s]Connection error trying to retrieve data from %s: %s'
-                            % (errno, nzbprov, e)
-                        )
-                        if any(
-                            [
-                                errno.ETIMEDOUT,
-                                errno.ECONNREFUSED,
-                                errno.EHOSTDOWN,
-                                errno.EHOSTUNREACH,
-                            ]
-                        ):
-                            helpers.disable_provider(tmpprov, 'Connection Refused.')
-                        is_info['foundc']['status'] = False
-                        break
                     except requests.exceptions.RequestException as e:
-                        logger.warn(
-                            '[%s]General Error fetching data from %s: %s'
-                            % (errno.errorcode, nzbprov, e)
-                        )
-                        if any(
-                            [
-                                errno.ETIMEDOUT,
-                                errno.ECONNREFUSED,
-                                errno.EHOSTDOWN,
-                                errno.EHOSTUNREACH,
-                            ]
-                        ):
-                            helpers.disable_provider(tmpprov, 'Connection Refused.')
-                            logger.warn(
-                                'Aborting search due to Provider unavailability'
-                            )
-                            is_info['foundc']['status'] = False
+                        # Pause the provider only when it's down or asked us to back off; a
+                        # rejected API key is logged as such and doesn't pause it.
+                        if helpers.provider_request_failed(tmpprov, e) in ('down', 'rate'):
+                            logger.warn('Aborting search due to Provider unavailability')
+                        is_info['foundc']['status'] = False
                         break
                     is_info['foundc']['lastrun'] = time.time()
                     logger.info('setting lastrun for %s to %s' % (is_info['foundc']['provider'], time.ctime(is_info['foundc']['lastrun'])))
@@ -1275,7 +1243,7 @@ def NZB_SEARCH(
                                 logger.warn(
                                     'DAILY API limit reached. Disabling %s' % tmpprov
                                 )
-                                helpers.disable_provider(tmpprov, 'API Limit reached')
+                                helpers.disable_provider(tmpprov, 'API Limit reached', provider_asked=True)
                                 verified_matches = "no results"
                                 is_info['foundc']['status'] = False
                                 done = True

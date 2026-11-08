@@ -125,7 +125,7 @@ _CONFIG_DEFINITIONS = OrderedDict({
     'SEARCH_INTERVAL': (int, 'Scheduler', 1440),
     'DOWNLOAD_SCAN_INTERVAL': (int, 'Scheduler', 5),
     'CHECK_GITHUB_INTERVAL' : (int, 'Scheduler', 360),
-    'BLOCKLIST_TIMER': (int, 'Scheduler', 3600),
+    'BLOCKLIST_TIMER': (int, 'Scheduler', 900),
 
     'ALT_PULL' : (int, 'Weekly', 2),
     'PULL_REFRESH': (str, 'Weekly', None),

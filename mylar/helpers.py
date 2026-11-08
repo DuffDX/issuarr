@@ -3118,12 +3118,48 @@ def block_provider_check(site, simple=True, force=False):
     else:
         return {'blocked': False, 'remain': 0}
 
-def disable_provider(site, reason=None, delay=0):
+def _hide_keys(text):
+    return re.sub(r'((?:apikey|api_key|r)=)[^&\s]+', r'\1xxx', str(text))
+
+def provider_request_failed(site, exc):
+    """Work out what a failed search request means and pause the provider only when it's
+    unavailable or asked us to back off. A rejected API key is a setup mistake to show, not
+    an outage, so it never pauses the provider. Returns 'auth', 'rate', 'down' or 'other'."""
+    resp = getattr(exc, 'response', None)
+    code = getattr(resp, 'status_code', None)
+    if code in (401, 403):
+        logger.error('%s rejected the API key (HTTP %s). Check the key under Settings > Search providers. '
+                     'Not pausing it.' % (site, code))
+        return 'auth'
+    if code == 429:
+        try:
+            delay = int(resp.headers.get('Retry-After', 0))
+        except (TypeError, ValueError):
+            delay = 0
+        disable_provider(site, 'Rate limited by the provider (HTTP 429)', delay=delay, provider_asked=True)
+        return 'rate'
+    if code is not None and (code >= 500 or code == 404):
+        disable_provider(site, 'Unavailable (HTTP %s)' % code)
+        return 'down'
+    if code is None and isinstance(exc, requests.exceptions.ConnectionError):
+        disable_provider(site, 'Could not connect')
+        return 'down'
+    logger.warn('Search request to %s failed: %s. Not pausing it.' % (site, _hide_keys(exc)))
+    return 'other'
+
+def disable_provider(site, reason=None, delay=0, provider_asked=False):
+    """Pause a provider that is failing. The pause length is BLOCKLIST_TIMER (seconds); 0 turns
+    pausing off. provider_asked is for the provider itself telling us to back off (API limit
+    reached, HTTP 429): that pause always happens, for `delay` seconds when the provider said how long."""
+    timer = int(mylar.CONFIG.BLOCKLIST_TIMER or 0)
     if not delay:
-        if mylar.CONFIG.BLOCKLIST_TIMER > 0:
-            delay = int(mylar.CONFIG.BLOCKLIST_TIMER)
-        else:
+        if timer > 0:
+            delay = timer
+        elif provider_asked:
             delay = 3600
+        else:
+            logger.info('Not pausing %s (%s): pausing failing providers is turned off.' % (site, reason))
+            return
     mins = int(delay / 60) + (delay % 60 > 0)
     logger.info('Temporarily blocking provider %s for %s minutes...'% (site, mins))
     for entry in list(mylar.PROVIDER_BLOCKLIST):
