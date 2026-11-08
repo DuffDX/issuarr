@@ -8168,6 +8168,7 @@ class WebInterface(object):
                     "search_interval": mylar.CONFIG.SEARCH_INTERVAL,
                     "nzb_startup_search": helpers.checked(mylar.CONFIG.NZB_STARTUP_SEARCH),
                     "search_delay": mylar.CONFIG.SEARCH_DELAY,
+                    "blocklist_minutes": -(-int(mylar.CONFIG.BLOCKLIST_TIMER or 0) // 60),
                     "nzb_downloader_sabnzbd": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 0),
                     "nzb_downloader_nzbget": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 1),
                     "nzb_downloader_blackhole": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 2),
@@ -8807,6 +8808,13 @@ class WebInterface(object):
             kwargs['ddl_query_delay'] = query_delay(kwargs['ddl_query_delay'])
         if 'cvapi_rate' in kwargs:
             kwargs['cvapi_rate'] = cv_gap(kwargs['cvapi_rate'])
+        if 'blocklist_minutes' in kwargs:
+            # shown in minutes, stored in seconds; 0 turns pausing off
+            minutes = kwargs.pop('blocklist_minutes')
+            try:
+                kwargs['blocklist_timer'] = max(0, int(minutes)) * 60
+            except (TypeError, ValueError):
+                pass
         if 'cover_match_score' in kwargs:
             try:
                 kwargs['cover_match_score'] = max(4, min(int(kwargs['cover_match_score']), 32))
@@ -10113,6 +10121,10 @@ class WebInterface(object):
         result = helpers.newznab_test(name, host, ssl, apikey)
         if result is True:
             logger.info('Successfully tested %s [%s] - valid api response received' % (name, host))
+            # it works now, so a pause from an earlier failure no longer applies
+            if helpers.block_provider_check(name):
+                helpers.block_provider_check(name, force=True)
+                logger.info('Unpaused %s after a successful test.' % name)
             return 'Successfully tested %s!' % name
         else:
             logger.warn('Testing failed to %s [HOST:%s][SSL:%s]' % (name, host, bool(ssl)))
@@ -10131,6 +10143,9 @@ class WebInterface(object):
         result = helpers.torznab_test(name, host, ssl, apikey)
         if result is True:
             logger.info('Successfully tested %s [%s] - valid api response received' % (name, host))
+            if helpers.block_provider_check(name):
+                helpers.block_provider_check(name, force=True)
+                logger.info('Unpaused %s after a successful test.' % name)
             return 'Successfully tested %s!' % name
         else:
             logger.warn('Testing failed to %s [HOST:%s][SSL:%s]' % (name, host, bool(ssl)))
