@@ -3087,6 +3087,21 @@ def get_the_hash(filepath):
     logger.info('Hash of file : ' + thehash)
     return {'hash':     thehash}
 
+def split_newznab_uid(stored):
+    """A Newznab indexer's User ID is stored with its search categories after '#'
+    ('uid#7000#7030'). Returns (user id, '7000,7030'). No '#' means no categories."""
+    stored = '' if stored in (None, 'None') else str(stored)
+    if '#' not in stored:
+        return stored.strip(), ''
+    uid, _, cats = stored.partition('#')
+    return uid.strip(), ','.join(c.strip() for c in cats.split('#') if c.strip())
+
+def join_newznab_uid(uid, categories):
+    """The stored form of a User ID plus categories ('7000, 7030' or '7000 7030')."""
+    uid = split_newznab_uid(uid)[0]
+    cats = [c for c in re.split(r'[\s,#]+', str(categories or '')) if c]
+    return '%s#%s' % (uid, '#'.join(cats)) if cats else uid
+
 def _block_key(site):
     """One name for a provider, however it's spelled where it's blocked or checked:
     'newznab: Geek', 'Geek (newznab)', 'Geek [nzbhydra] (newznab) [RSS]' and 'Geek' are all 'geek'."""

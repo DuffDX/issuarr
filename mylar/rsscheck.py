@@ -598,7 +598,7 @@ def nzbs(provider=None, forcerss=False):
             site = newznab_host[0].rstrip()
             (newznabuid, _, newznabcat) = (newznab_host[4] or '').partition('#')
             newznabuid = newznabuid or '1'
-            newznabcat = newznabcat or '7030'
+            newznabcat = newznabcat.replace('#', ',') or '7030'
 
             if site[-10:] == '[nzbhydra]':
                 #to allow nzbhydra to do category search by most recent (ie. rss)

@@ -491,6 +491,7 @@
                     nid = nz[6]
                     nz_enabled = 'checked' if nz[5] in ('1', 1) else ''
                     nz_verify = 'checked' if nz[2] in ('1', 1) else ''
+                    nz_uid, nz_cats = mylar.helpers.split_newznab_uid(nz[4])
                 %>
                 <div class="set-provider config" id="newznab${nid}">
                     <div class="set-provider-head">
@@ -502,7 +503,9 @@
                     ${field('newznab_host%s' % nid, 'Address', nz[1], id='newznab_host%s' % nid)}
                     ${toggle('newznab_verify%s' % nid, 'Verify the SSL certificate', nz_verify, id='newznab_verify%s' % nid)}
                     ${field('newznab_apikey%s' % nid, 'API key', nz[3], id='newznab_apikey%s' % nid, attrs='class="set-wide mono" spellcheck="false"')}
-                    ${field('newznab_uid%s' % nid, 'User ID', nz[4], help='Only needed for RSS.')}
+                    ${field('newznab_categories%s' % nid, 'Categories', nz_cats, id='newznab_categories%s' % nid, placeholder='7030',
+                            help='The indexer categories searched. Blank searches 7030 (Comics). Some indexers file comics under Books (7000). Separate several with commas.')}
+                    ${field('newznab_uid%s' % nid, 'User ID', nz_uid, help='Only needed for RSS.')}
                     <div class="set-provider-foot">
                         <img name="newznabstatus${nid}" id="newznabstatus${nid}" src="images/success.png" class="set-test-icon" style="visibility:hidden;" width="18" height="18" alt="" />
                         <input type="button" class="btn newznabtest" value="Test" id="newznab_test${nid}" name="newznab_test${nid}" />
@@ -2252,7 +2255,7 @@ $("#enable_airdcpp").click(function(){
                         text('Address', 'host', 'value="http://"') +
                         '<div class="set-row set-tog"><label class="set-label" for="' + p + '_verify' + intId + '"><b>Verify the SSL certificate</b></label><input type="checkbox" class="switch" id="' + p + '_verify' + intId + '" name="' + p + '_verify' + intId + '" value="1" /></div>' +
                         text('API key', 'apikey', 'class="set-wide mono" spellcheck="false"') +
-                        (p === 'newznab' ? text('User ID', 'uid', '', 'Only needed for RSS.') : text('Category', 'category', '')) +
+                        (p === 'newznab' ? text('Categories', 'categories', 'placeholder="7030"', 'Blank searches 7030 (Comics). Some indexers file comics under Books (7000).') + text('User ID', 'uid', '', 'Only needed for RSS.') : text('Category', 'category', '')) +
                         '<div class="set-provider-foot"><img name="' + p + 'status' + intId + '" id="' + p + 'status' + intId + '" src="images/success.png" class="set-test-icon" style="visibility:hidden;" width="18" height="18" alt="" />' +
                         '<input type="button" class="btn ' + p + 'test" value="Test" id="' + p + '_test' + intId + '" name="' + p + '_test' + intId + '" />' +
                         '<input type="button" class="btn btn-ghost remove" value="Remove" /></div></div>';
