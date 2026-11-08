@@ -19,7 +19,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: issuarr/issuarr
+  IMAGE_NAME: duffdx/issuarr
 
 jobs:
     build_and_push:
