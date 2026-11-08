@@ -8848,7 +8848,9 @@ class WebInterface(object):
                     newznab_verify = 0
                 newznab_apikey = kwargs['newznab_apikey' + newznab_number]
                 newznab_uid = kwargs['newznab_uid' + newznab_number]
-                if ',' in newznab_uid:
+                if ('newznab_categories' + newznab_number) in kwargs:
+                    newznab_uid = helpers.join_newznab_uid(newznab_uid, kwargs.pop('newznab_categories' + newznab_number))
+                elif ',' in newznab_uid:
                     newznab_uid = re.sub(',', '#', newznab_uid).strip()
                 try:
                     newznab_enabled = str(kwargs['newznab_enabled' + newznab_number])
