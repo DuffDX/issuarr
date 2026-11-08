@@ -164,17 +164,9 @@ class SABnzbd(object):
                         self.remove_history(hq['nzo_id'], hq['status'])
                         return {'status': 'double-pp', 'failed': False}
 
-                    if os.path.isfile(hq['storage']):
+                    if os.path.exists(hq['storage']):
                         logger.fdebug('location found @ %s' % hq['storage'])
-                        found = {'status':   True,
-                                 'name':     ntpath.basename(hq['storage']), #os.pathre.sub('.nzb', '', hq['nzb_name']).strip(),
-                                 'location': os.path.abspath(os.path.join(hq['storage'], os.pardir)),
-                                 'failed':   False,
-                                 'issueid':  nzbinfo['issueid'],
-                                 'comicid':  nzbinfo['comicid'],
-                                 'apicall':  True,
-                                 'ddl':      False,
-                                 'download_info': nzbinfo['download_info']}
+                        found = self.completed_item(hq['storage'], nzbinfo)
                         self.remove_history(hq['nzo_id'], hq['status'])
                         break
 
@@ -191,21 +183,13 @@ class SABnzbd(object):
                                 logger.warn('[ERROR] Unable to remap the directory from SAB to Mylar\'s configuration.')
                                 self.remove_history(hq['nzo_id'], hq['status'])
                                 return {'status': 'file not found', 'failed': False}
-                            elif not os.path.isfile(new_path):
+                            elif not os.path.exists(new_path):
                                 logger.fdebug('[ERROR] Unable to locate path (%s) on the machine that is running Mylar. If Mylar and sabnzbd are on separate machines, you need to set a directory location that is accessible to both' % (new_path))
                                 self.remove_history(hq['nzo_id'], hq['status'])
                                 return {'status': 'file not found', 'failed': False}
 
                         logger.fdebug('location found @ %s' % new_path)
-                        found = {'status':   True,
-                                 'name':     ntpath.basename(new_path),
-                                 'location': os.path.abspath(os.path.join(new_path, os.pardir)),
-                                 'failed':   False,
-                                 'issueid':  nzbinfo['issueid'],
-                                 'comicid':  nzbinfo['comicid'],
-                                 'apicall':  True,
-                                 'ddl':      False,
-                                 'download_info': nzbinfo['download_info']}
+                        found = self.completed_item(str(new_path), nzbinfo)
                         self.remove_history(hq['nzo_id'], hq['status'])
                         break
 
@@ -278,6 +262,27 @@ class SABnzbd(object):
             return {'status': False, 'failed': False}
 
         return found
+
+    @staticmethod
+    def completed_item(path, nzbinfo):
+        """What to hand post-processing for a finished job. SABnzbd reports the job folder
+        when the category makes job folders, or the file itself when it doesn't (folder ending
+        in *). A folder is passed as-is, like NZBGet's, and post-processing looks inside it."""
+        if os.path.isdir(path):
+            name = ntpath.basename(os.path.normpath(path))
+            location = os.path.abspath(path)
+        else:
+            name = ntpath.basename(path)
+            location = os.path.abspath(os.path.join(path, os.pardir))
+        return {'status':   True,
+                'name':     name,
+                'location': location,
+                'failed':   False,
+                'issueid':  nzbinfo['issueid'],
+                'comicid':  nzbinfo['comicid'],
+                'apicall':  True,
+                'ddl':      False,
+                'download_info': nzbinfo['download_info']}
 
     def remove_history(self, nzo_id, status):
         if all([status == 'Failed', mylar.CONFIG.SAB_REMOVE_FAILED]) or mylar.CONFIG.SAB_REMOVE_COMPLETED:
