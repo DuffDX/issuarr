@@ -131,8 +131,8 @@
             <div class="set-group-head"><h2 id="sg-search">Searching</h2></div>
             ${field('search_interval', 'Search for wanted issues every', config['search_interval'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">minutes</span>')}
             ${toggle('nzb_startup_search', 'Search when Issuarr starts', config['nzb_startup_search'])}
-            ${field('search_delay', 'Wait between searches', config['search_delay'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">minutes</span>',
-                    help='The pause between one search request and the next. At least 1 minute.')}
+            ${field('search_wait', 'Wait between searches', config['search_wait'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">seconds</span>',
+                    help='The pause between one search request and the next. 0 means no wait. Searches for a series already answered by a whole-series search never wait.')}
         </section>
 
         <section class="set-group" aria-labelledby="sg-cv">

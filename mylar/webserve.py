@@ -235,6 +235,22 @@ def cv_gap(value, low=2, high=60):
         return mylar.CONFIG.CVAPI_RATE
 
 
+def search_wait_seconds():
+    """The wait between indexer searches in seconds, for the settings page. Before the
+    seconds setting existed the wait was set in minutes (SEARCH_DELAY), so that's shown
+    until a seconds value is saved."""
+    try:
+        wait = int(mylar.CONFIG.SEARCH_WAIT)
+    except (TypeError, ValueError, AttributeError):
+        wait = -1
+    if wait >= 0:
+        return wait
+    try:
+        return max(0, int(mylar.CONFIG.SEARCH_DELAY)) * 60
+    except (TypeError, ValueError):
+        return 60
+
+
 def query_delay(value, low=3, high=60):
     """The wait between GetComics search pages, from the settings form: a whole number of
     seconds kept between low and high. Anything unreadable keeps the current setting."""
@@ -8168,6 +8184,7 @@ class WebInterface(object):
                     "search_interval": mylar.CONFIG.SEARCH_INTERVAL,
                     "nzb_startup_search": helpers.checked(mylar.CONFIG.NZB_STARTUP_SEARCH),
                     "search_delay": mylar.CONFIG.SEARCH_DELAY,
+                    "search_wait": search_wait_seconds(),
                     "blocklist_minutes": -(-int(mylar.CONFIG.BLOCKLIST_TIMER or 0) // 60),
                     "nzb_downloader_sabnzbd": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 0),
                     "nzb_downloader_nzbget": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 1),
@@ -8813,6 +8830,13 @@ class WebInterface(object):
             minutes = kwargs.pop('blocklist_minutes')
             try:
                 kwargs['blocklist_timer'] = max(0, int(minutes)) * 60
+            except (TypeError, ValueError):
+                pass
+        if 'search_wait' in kwargs:
+            # seconds between searches; 0 means no wait
+            seconds = kwargs.pop('search_wait')
+            try:
+                kwargs['search_wait'] = max(0, int(seconds))
             except (TypeError, ValueError):
                 pass
         if 'cover_match_score' in kwargs:

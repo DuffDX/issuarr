@@ -4329,6 +4329,14 @@ def check_the_search_delay(manual=False):
     # set a delay between searches here. Default is for 30 seconds...
     # changing this to lower could result in a ban from your nzb source
     # due to hammering.
+    # SEARCH_WAIT is the wait in seconds (0 = none); -1 means it was never set,
+    # so the older SEARCH_DELAY (minutes) still applies.
+    try:
+        wait = int(mylar.CONFIG.SEARCH_WAIT)
+    except (TypeError, ValueError, AttributeError):
+        wait = -1
+    if wait >= 0:
+        return min(wait, 30) if manual else wait
     if (
         mylar.CONFIG.SEARCH_DELAY == 'None'
         or mylar.CONFIG.SEARCH_DELAY is None
