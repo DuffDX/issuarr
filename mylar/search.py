@@ -35,7 +35,7 @@ from mylar import (
 )
 from mylar.downloaders import external_server as exs
 from mylar.downloaders import airdcpp, airdcpp_pack
-from mylar import archiveorg, ddlsources
+from mylar import archiveorg, ddlsources, series_results
 
 import feedparser
 import requests
@@ -1059,6 +1059,9 @@ def NZB_SEARCH(
 
         # this is the API calls
         else:
+            series_key = None
+            series_fetch = False
+            series_hit = None
             if nzbprov == '':
                 verified_matches = "no results"
             elif nzbprov != 'experimental':
@@ -1074,6 +1077,22 @@ def NZB_SEARCH(
                         comsearch,
                         category_newznab,
                     )
+                    # one search for the whole series answers every issue of it
+                    if series_results.enabled() and IssueNumber is not None:
+                        series_key = series_results.key(name_newznab, host_newznab_fix, comsrc, category_newznab)
+                        series_entry = series_results.get(series_key)
+                        if series_entry is None:
+                            series_fetch = True
+                            findurl = '%s?t=search&q=%s&o=xml&cat=%s&limit=%s' % (
+                                host_newznab_fix, comsrc, category_newznab, series_results.LIMIT)
+                            logger.info('[SERIES-SEARCH] Searching %s for all of %s at once.' % (name_newznab, findcomic))
+                        elif series_entry['complete']:
+                            series_hit = series_entry['content']
+                            logger.fdebug('[SERIES-SEARCH] Matching %s #%s against the %s releases already found for the series.'
+                                          % (findcomic, mod_isssearch, series_entry['items']))
+                        else:
+                            logger.fdebug('[SERIES-SEARCH] %s has more releases than one search returns - searching for #%s on its own.'
+                                          % (findcomic, mod_isssearch))
                 elif provider_stat['type'] == 'torznab':
                     if host_torznab[len(host_torznab) - 1 : len(host_torznab)] == '/':
                         torznab_fix = host_torznab[:-1]
@@ -1167,7 +1186,7 @@ def NZB_SEARCH(
                     logger.fdebug('[SSL: %s] Search URL: %s' % (verify, logsearch))
 
                     # check search time here
-                    if localbypass is False and foundc['lastrun'] != 0:
+                    if localbypass is False and foundc['lastrun'] != 0 and series_hit is None:
                         diff = check_time(foundc['lastrun'])
                         if diff < pause_the_search:
                             logger.warn('[PROVIDER-SEARCH-DELAY][%s] Waiting %s seconds before we search again...' % (nzbprov, (pause_the_search - int(diff))))
@@ -1176,10 +1195,18 @@ def NZB_SEARCH(
                             logger.fdebug('[PROVIDER-SEARCH-DELAY][%s] Last search took place %s seconds ago. We\'re clear...' % (nzbprov, int(diff)))
 
                     try:
-                        r = requests.get(
-                            findurl, params=payload, verify=verify, headers=headers
-                        )
-                        r.raise_for_status()
+                        if series_hit is not None:
+                            r = series_results.CachedResponse(series_hit)
+                        else:
+                            r = requests.get(
+                                findurl, params=payload, verify=verify, headers=headers
+                            )
+                            r.raise_for_status()
+                            if series_fetch:
+                                stored = series_results.put(series_key, r.content)
+                                logger.info('[SERIES-SEARCH] %s returned %s releases of %s%s.'
+                                            % (name_newznab, stored['items'], findcomic,
+                                               '' if stored['complete'] else ' (a full page - issues not in it are searched one by one)'))
                     except requests.exceptions.Timeout as e:
                         logger.warn(
                             'Timeout occured fetching data from %s: %s' % (nzbprov, e)
@@ -1193,9 +1220,10 @@ def NZB_SEARCH(
                             logger.warn('Aborting search due to Provider unavailability')
                         is_info['foundc']['status'] = False
                         break
-                    is_info['foundc']['lastrun'] = time.time()
-                    logger.info('setting lastrun for %s to %s' % (is_info['foundc']['provider'], time.ctime(is_info['foundc']['lastrun'])))
-                    last_run_check(write={str(nzbprov): {'active': provider_stat['active'], 'lastrun': is_info['foundc']['lastrun'], 'type': provider_stat['type'], 'hits': provider_stat['hits']+1, 'id': provider_stat['id']}})
+                    if series_hit is None:
+                        is_info['foundc']['lastrun'] = time.time()
+                        logger.info('setting lastrun for %s to %s' % (is_info['foundc']['provider'], time.ctime(is_info['foundc']['lastrun'])))
+                        last_run_check(write={str(nzbprov): {'active': provider_stat['active'], 'lastrun': is_info['foundc']['lastrun'], 'type': provider_stat['type'], 'hits': provider_stat['hits']+1, 'id': provider_stat['id']}})
                     try:
                         if str(r.status_code) != '200':
                             logger.warn(

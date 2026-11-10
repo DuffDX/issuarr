@@ -50,6 +50,7 @@ _CONFIG_DEFINITIONS = OrderedDict({
     'WANTED_TAB_OFF': (bool, 'General', False),
     'ENABLE_RSS': (bool, 'General', False),
     'SEARCH_DELAY' : (int, 'General', 1),
+    'SERIES_SEARCH' : (bool, 'General', True),
     'GRABBAG_DIR': (str, 'General', None),
     'HIGHCOUNT': (int, 'General', 0),
     'MAINTAINSERIESFOLDER': (bool, 'General', False),
