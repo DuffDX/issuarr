@@ -131,6 +131,8 @@
             <div class="set-group-head"><h2 id="sg-search">Searching</h2></div>
             ${field('search_interval', 'Search for wanted issues every', config['search_interval'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">minutes</span>')}
             ${toggle('nzb_startup_search', 'Search when Issuarr starts', config['nzb_startup_search'])}
+            ${toggle('series_search', 'Search a whole series at once', config['series_search'],
+                     help='One search per series on Newznab indexers answers every wanted issue of it, instead of one search per issue. A series with more releases than one search returns is searched issue by issue.')}
             ${field('search_delay', 'Wait between searches', config['search_delay'], attrs='inputmode="numeric" class="set-num"', suffix='<span class="set-unit">minutes</span>',
                     help='The pause between one search request and the next. At least 1 minute.')}
         </section>

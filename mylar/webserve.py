@@ -8167,6 +8167,7 @@ class WebInterface(object):
                     "client_watch_interval": mylar.CONFIG.CLIENT_WATCH_INTERVAL,
                     "search_interval": mylar.CONFIG.SEARCH_INTERVAL,
                     "nzb_startup_search": helpers.checked(mylar.CONFIG.NZB_STARTUP_SEARCH),
+                    "series_search": helpers.checked(mylar.CONFIG.SERIES_SEARCH),
                     "search_delay": mylar.CONFIG.SEARCH_DELAY,
                     "blocklist_minutes": -(-int(mylar.CONFIG.BLOCKLIST_TIMER or 0) // 60),
                     "nzb_downloader_sabnzbd": helpers.radio(mylar.CONFIG.NZB_DOWNLOADER, 0),
@@ -8774,7 +8775,7 @@ class WebInterface(object):
 
     def configUpdate(self, **kwargs):
         intervals_before = {k: getattr(mylar.CONFIG, k, None) for k in ('SEARCH_INTERVAL', 'RSS_CHECKINTERVAL')}
-        checked_configs = ['enable_https', 'launch_browser', 'backup_on_start', 'syno_fix', 'annuals_on', 'api_enabled', 'nzb_startup_search',
+        checked_configs = ['enable_https', 'launch_browser', 'backup_on_start', 'syno_fix', 'annuals_on', 'api_enabled', 'nzb_startup_search', 'series_search',
                            'enforce_perms', 'sab_to_mylar', 'torrent_local', 'torrent_seedbox', 'rtorrent_verify', 'rtorrent_startonload', 'qbittorrent_ignore_ssl',
                            'enable_torrents', 'enable_rss', 'experimental', 'enable_torznab',
                            'newznab', 'use_minsize', 'use_maxsize', 'ddump', 'failed_download_handling', 'sab_client_post_processing', 'nzbget_client_post_processing',
